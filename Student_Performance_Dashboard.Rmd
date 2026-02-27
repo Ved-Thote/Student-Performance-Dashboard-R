@@ -1,0 +1,186 @@
+---
+title: "Student Performance Dashboard Recreation"
+author: "Ved Thote"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+# 1. Introduction
+
+This report analyzes the Students Performance dataset obtained from Kaggle.
+
+**Dataset Source:**  
+[Students Performance in Exams (Kaggle Dataset)](https://www.kaggle.com/datasets/spscientist/students-performance-in-exams)
+
+The objective is to perform Exploratory Data Analysis (EDA) and create visualizations using RStudio.
+
+# 2. Loading Required Libraries
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(corrplot)
+```
+
+# 3. Import Dataset
+
+```{r}
+data <- read.csv("StudentsPerformance.csv")
+head(data)
+str(data)
+summary(data)
+```
+
+# 4. Data Cleaning
+
+```{r}
+colSums(is.na(data))
+
+data$gender <- as.factor(data$gender)
+data$race.ethnicity <- as.factor(data$race.ethnicity)
+data$parental.level.of.education <- as.factor(data$parental.level.of.education)
+data$lunch <- as.factor(data$lunch)
+data$test.preparation.course <- as.factor(data$test.preparation.course)
+```
+
+# 5. Feature Engineering
+
+```{r}
+data$total_score <- data$math.score +
+                    data$reading.score +
+                    data$writing.score
+
+data$average_score <- data$total_score / 3
+
+summary(data$average_score)
+```
+
+# 6. Gender-wise Performance
+
+```{r}
+gender_avg <- data %>%
+  group_by(gender) %>%
+  summarise(
+    Math = mean(math.score),
+    Reading = mean(reading.score),
+    Writing = mean(writing.score),
+    Average = mean(average_score)
+  )
+
+gender_avg
+```
+
+```{r}
+ggplot(data, aes(x = gender, y = average_score, fill = gender)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Average Score by Gender",
+       x = "Gender",
+       y = "Average Score")
+```
+
+**Observation:**  
+Female students perform better in reading and writing, while math performance is comparable.
+
+# 7. Test Preparation Impact
+
+```{r}
+ggplot(data, aes(x = test.preparation.course,
+                 y = average_score,
+                 fill = test.preparation.course)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Impact of Test Preparation Course",
+       x = "Test Preparation Course",
+       y = "Average Score")
+```
+
+**Observation:**  
+Students who completed the test preparation course have higher average scores.
+
+# 8. Parental Education Impact
+
+```{r}
+ggplot(data, aes(x = parental.level.of.education,
+                 y = average_score)) +
+  geom_boxplot(fill = "skyblue") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Parental Education vs Average Score",
+       x = "Parental Education Level",
+       y = "Average Score")
+```
+
+**Observation:**  
+Higher parental education levels are associated with better student performance.
+
+# 9. Correlation Analysis
+
+```{r}
+score_data <- data[, c("math.score",
+                       "reading.score",
+                       "writing.score")]
+
+cor_matrix <- cor(score_data)
+cor_matrix
+```
+
+```{r}
+corrplot(cor_matrix,
+         method = "color",
+         addCoef.col = "black")
+```
+
+**Observation:**  
+There is a strong positive correlation between all three subjects.
+
+# 10. Score Distribution
+
+```{r}
+ggplot(data, aes(x = math.score)) +
+  geom_histogram(fill = "blue", bins = 20) +
+  theme_minimal() +
+  labs(title = "Distribution of Math Scores")
+```
+
+```{r}
+ggplot(data, aes(x = reading.score)) +
+  geom_histogram(fill = "green", bins = 20) +
+  theme_minimal() +
+  labs(title = "Distribution of Reading Scores")
+```
+
+```{r}
+ggplot(data, aes(x = writing.score)) +
+  geom_histogram(fill = "purple", bins = 20) +
+  theme_minimal() +
+  labs(title = "Distribution of Writing Scores")
+```
+
+# 11. Grade Classification
+
+```{r}
+data$grade <- ifelse(data$average_score >= 80, "A",
+                     ifelse(data$average_score >= 60, "B", "C"))
+
+table(data$grade)
+```
+
+```{r}
+ggplot(data, aes(x = grade, fill = grade)) +
+  geom_bar() +
+  theme_minimal() +
+  labs(title = "Grade Distribution",
+       x = "Grade",
+       y = "Count")
+```
+
+**Observation:**  
+Most students fall into Grade B category.
+
+# 12. Conclusion
+
+- Test preparation improves student performance.
+- Strong positive correlation exists among math, reading, and writing scores.
+- Parental education positively influences student outcomes.
+- Female students perform better in reading and writing subjects.
+
